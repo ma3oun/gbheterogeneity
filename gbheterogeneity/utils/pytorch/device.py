@@ -32,7 +32,11 @@ def get_device(gpu_ids: List[int] = []) -> torch.device:
         n_gpus = get_number_of_available_gpus()
 
         if n_required_gpus > n_gpus:
-            raise ValueError("Required gpus ({}) > available gpus ({})".format(n_required_gpus, n_gpus))
+            raise ValueError(
+                "Required gpus ({}) > available gpus ({})".format(
+                    n_required_gpus, n_gpus
+                )
+            )
 
         elif n_required_gpus == 1:
             print("Running on single gpu: {}".format(gpu_ids[0]))
@@ -46,14 +50,18 @@ def get_device(gpu_ids: List[int] = []) -> torch.device:
         raise ValueError("Cannot run on the selected devices: {}".format(gpu_ids))
 
 
-def model_to_multiple_gpus(model: torch.nn.Module, device: torch.device, gpu_ids: List[int]) -> torch.nn.Module:
+def model_to_multiple_gpus(
+    model: torch.nn.Module, device: torch.device, gpu_ids: List[int]
+) -> torch.nn.Module:
     print("Moving model to gpus: {}".format(gpu_ids))
     model = torch.nn.DataParallel(model, device_ids=gpu_ids)
     model.to(device)
     return model
 
 
-def model_to_single_gpu(model: torch.nn.Module, device: torch.device) -> torch.nn.Module:
+def model_to_single_gpu(
+    model: torch.nn.Module, device: torch.device
+) -> torch.nn.Module:
     print("Moving model to gpu: {}".format(device))
     model.to(device)
 
@@ -67,7 +75,9 @@ def model_to_cpu(model: torch.nn.Module, device: torch.device) -> torch.nn.Modul
     return model
 
 
-def model_to_device(model: torch.nn.Module, device: torch.device, gpu_ids: List[int]) -> torch.nn.Module:
+def model_to_device(
+    model: torch.nn.Module, device: torch.device, gpu_ids: List[int]
+) -> torch.nn.Module:
     n_required_gpus = len(gpu_ids)
 
     if n_required_gpus == 0:

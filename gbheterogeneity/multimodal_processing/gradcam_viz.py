@@ -34,25 +34,31 @@ def images_to_device(images: torch.Tensor, device: torch.device) -> torch.Tensor
     return images
 
 
-def rna_to_device(rna_expression: Dict[str, torch.Tensor], device: torch.device) -> Dict[str, torch.Tensor]:
+def rna_to_device(
+    rna_expression: Dict[str, torch.Tensor], device: torch.device
+) -> Dict[str, torch.Tensor]:
     for key, tensor in rna_expression.items():
         rna_expression[key] = tensor.float().to(device)
     return rna_expression
 
 
-def data_to_device(images: torch.Tensor, rna: Dict[str, torch.Tensor], device: torch.device) -> Tuple:
+def data_to_device(
+    images: torch.Tensor, rna: Dict[str, torch.Tensor], device: torch.device
+) -> Tuple:
     images = images_to_device(images, device)
     rna = rna_to_device(rna, device)
 
     return images, rna
 
 
-def set_require_grad_inputs(input_data: Union[Dict[str, torch.Tensor],torch.Tensor]) -> Dict[str, torch.Tensor]:
-    if isinstance(input_data, torch.Tensor): # for images
+def set_require_grad_inputs(
+    input_data: Union[Dict[str, torch.Tensor], torch.Tensor],
+) -> Dict[str, torch.Tensor]:
+    if isinstance(input_data, torch.Tensor):  # for images
         input_data.requires_grad = True
         return input_data
     else:
-        for _, value in input_data.items(): # for RNA
+        for _, value in input_data.items():  # for RNA
             value.requires_grad = True
     return input_data
 
@@ -63,7 +69,10 @@ def get_rna_gradients(rna_data: Dict[str, torch.Tensor]) -> Dict[str, torch.Tens
         gradients[key] = value.grad
     return gradients
 
-def compute_gradcam(model: CoattentionModel, batch: Tuple, device: torch.device,gradcam_on_rna: bool) -> Tuple:
+
+def compute_gradcam(
+    model: CoattentionModel, batch: Tuple, device: torch.device, gradcam_on_rna: bool
+) -> Tuple:
     images, rnas, infos = batch
     batch_size, _, _, _ = images.shape
     images, rnas = data_to_device(images, rnas, device)
@@ -78,7 +87,7 @@ def compute_gradcam(model: CoattentionModel, batch: Tuple, device: torch.device,
     positive_vl_outputs = vl_outputs[:batch_size]
     # Get matching scores using cosine similarity
     matching_scores = cosine_similarity(p_image, p_rna, dim=1)
-    
+
     matching_loss = torch.sum(positive_vl_outputs[:, 1])
 
     model.zero_grad()
@@ -93,8 +102,12 @@ def compute_gradcam(model: CoattentionModel, batch: Tuple, device: torch.device,
     # Get gradients per gene cluster
     with torch.no_grad():
         # Get attention maps and gradients
-        grads = model.co_attention.get_attn_gradients() # batch_size, #heads, #patches, #cluster
-        cams = model.co_attention.get_attention_map() # batch_size, #heads, #patches, #cluster
+        grads = (
+            model.co_attention.get_attn_gradients()
+        )  # batch_size, #heads, #patches, #cluster
+        cams = (
+            model.co_attention.get_attention_map()
+        )  # batch_size, #heads, #patches, #cluster
 
         # Remove global representations from cams and grads.
         cams = cams[:, :, 0, 1:]
@@ -126,14 +139,16 @@ def split_gradients_by_sample(grads: Dict, num_samples: int) -> List:
     return new_grads
 
 
-def plot_attention_on_gene_clusters(rna_map: torch.tensor, name: str, directory: str) -> None:
+def plot_attention_on_gene_clusters(
+    rna_map: torch.tensor, name: str, directory: str
+) -> None:
     basename = os.path.basename(name)
     save_path = os.path.splitext(basename)[0] + ".png"
     save_path = os.path.join(directory, save_path)
     gene_clusters = [i for i in range(rna_map.shape[0])]
     attention = rna_map.cpu().numpy().flatten()
     plt.figure(figsize=(8, 8))
-    plt.plot(gene_clusters, attention, 'ro')
+    plt.plot(gene_clusters, attention, "ro")
     plt.xlabel("Gene cluster ids")
     plt.ylabel("GradCAM values")
     plt.savefig(save_path)
@@ -147,14 +162,16 @@ def plot_attention_on_genes(genes: torch.tensor, name: str, directory: str) -> N
     genes_id = [i for i in range(genes.shape[0])]
     attention = genes.cpu().numpy().flatten()
     plt.figure(figsize=(8, 8))
-    plt.plot(genes_id, attention, 'ro')
+    plt.plot(genes_id, attention, "ro")
     plt.xlabel("Gene ids")
     plt.ylabel("GradCAM values")
     plt.savefig(save_path)
     plt.close()
 
 
-def get_relevant_gene_names(gene_names: Dict, gene_cluster_key: str, genes_id: List[int], num_genes: int = 10) -> List[str]:
+def get_relevant_gene_names(
+    gene_names: Dict, gene_cluster_key: str, genes_id: List[int], num_genes: int = 10
+) -> List[str]:
     names = gene_names[gene_cluster_key]
     new_names = []
     for i in range(num_genes):
@@ -163,7 +180,9 @@ def get_relevant_gene_names(gene_names: Dict, gene_cluster_key: str, genes_id: L
     return new_names
 
 
-def get_important_genes_per_sample(rna_map: torch.tensor, grad: Dict, name: str, gene_names: Dict, artifacts_dir: str) -> None:
+def get_important_genes_per_sample(
+    rna_map: torch.tensor, grad: Dict, name: str, gene_names: Dict, artifacts_dir: str
+) -> None:
     cluster = torch.argmax(rna_map)
     cluster_key = str(int(cluster.item()))
     genes = grad[cluster_key]
@@ -177,30 +196,42 @@ def get_important_genes_per_sample(rna_map: torch.tensor, grad: Dict, name: str,
     return relevant_genes
 
 
-def get_important_genes(maps: List, grads: Dict, names: List, gene_names: Dict, artifacts_dir: str) -> None:
+def get_important_genes(
+    maps: List, grads: Dict, names: List, gene_names: Dict, artifacts_dir: str
+) -> None:
     grads = split_gradients_by_sample(grads, len(names))
     important_genes = []
     for rna_map, grad, name in zip(maps, grads, names):
-        relevant_genes = get_important_genes_per_sample(rna_map, grad, name, gene_names, artifacts_dir)
+        relevant_genes = get_important_genes_per_sample(
+            rna_map, grad, name, gene_names, artifacts_dir
+        )
         important_genes = important_genes + relevant_genes
     return important_genes
 
 
-def process_oncopole_rna_data(model: torch.nn.Module, 
-                          loader: Iterable, 
-                          device: torch.device, 
-                          gene_names: Dict, 
-                          artifacts_dir: str,
-                          relevant_genes_path: str) -> None:
+def process_oncopole_rna_data(
+    model: torch.nn.Module,
+    loader: Iterable,
+    device: torch.device,
+    gene_names: Dict,
+    artifacts_dir: str,
+    relevant_genes_path: str,
+) -> None:
     target_genes = []
-    for batch in tqdm(loader,desc="Computing gradcams", total=len(loader)):
-        _, maps, grads, infos = compute_gradcam(model, batch, device, gradcam_on_rna=True)
-        
+    for batch in tqdm(loader, desc="Computing gradcams", total=len(loader)):
+        _, maps, grads, infos = compute_gradcam(
+            model, batch, device, gradcam_on_rna=True
+        )
+
         names = [info["patchFile"] for info in infos]
-        relevant_genes = get_important_genes(maps, grads, names, gene_names, artifacts_dir)
+        relevant_genes = get_important_genes(
+            maps, grads, names, gene_names, artifacts_dir
+        )
         target_genes = target_genes + relevant_genes
     relevance_occurence = collections.Counter(target_genes)
-    relevant_genes_pd = pd.DataFrame(relevance_occurence.items(), columns=["Gene", "Occurence"])
+    relevant_genes_pd = pd.DataFrame(
+        relevance_occurence.items(), columns=["Gene", "Occurence"]
+    )
     relevant_genes_pd.to_csv(relevant_genes_path, sep="\t", index=True)
     relevant_genes_pd = relevant_genes_pd.sort_values("Occurence", ascending=False)
     relevant_genes_pd = relevant_genes_pd.reset_index(drop=True).head(15)
@@ -215,63 +246,101 @@ def process_oncopole_rna_data(model: torch.nn.Module,
 
     return
 
-def process_oncopole_wsi_data(model: torch.nn.Module, 
-                          loader: Iterable, 
-                          device: torch.device, 
-                          artifacts_dir: str) -> None:
 
+def process_oncopole_wsi_data(
+    model: torch.nn.Module, loader: Iterable, device: torch.device, artifacts_dir: str
+) -> None:
     patches_list = []
-    coords = lambda x: x.cpu().item()//16 # each wsi patch is 16 times bigger than the tiny image
-    for step, batch in enumerate(tqdm(loader, desc="Computing gradcams", total=len(loader))):
-        matching_scores, _, grads, infos = compute_gradcam(model, batch, device, gradcam_on_rna=False)
-        
-        for matching_score, grad, info in zip(matching_scores.detach().cpu().numpy(), grads.detach().cpu().numpy(), infos):
+
+    def coords(x):  # each wsi patch is 16 times bigger than the tiny image
+        return x.cpu().item() // 16
+
+    for step, batch in enumerate(
+        tqdm(loader, desc="Computing gradcams", total=len(loader))
+    ):
+        matching_scores, _, grads, infos = compute_gradcam(
+            model, batch, device, gradcam_on_rna=False
+        )
+
+        for matching_score, grad, info in zip(
+            matching_scores.detach().cpu().numpy(), grads.detach().cpu().numpy(), infos
+        ):
             wsi_name = info["patchFile"].split("_")[0]
-            patch_coords = [coords(info[c]) for c in ["x1","y1","x2","y2"]]
-            patches_list.append((wsi_name, info["patchFile"], patch_coords, matching_score, grad))
+            patch_coords = [coords(info[c]) for c in ["x1", "y1", "x2", "y2"]]
+            patches_list.append(
+                (wsi_name, info["patchFile"], patch_coords, matching_score, grad)
+            )
 
     # Create a DataFrame from the patches_list
-    patches_df = pd.DataFrame(patches_list, columns=["wsi_name", "patchFile", "patch_coords", "matching_score", "grad"])
+    patches_df = pd.DataFrame(
+        patches_list,
+        columns=["wsi_name", "patchFile", "patch_coords", "matching_score", "grad"],
+    )
 
     # Group by wsi_name and aggregate the data
-    grouped = patches_df.groupby("wsi_name").agg({
-        "patchFile": list,
-        "patch_coords": list,
-        "matching_score": list,
-        "grad": list,
-    }).reset_index()
+    grouped = (
+        patches_df.groupby("wsi_name")
+        .agg(
+            {
+                "patchFile": list,
+                "patch_coords": list,
+                "matching_score": list,
+                "grad": list,
+            }
+        )
+        .reset_index()
+    )
 
     # for each wsi, open the wsi and save the matching scores and grads
-    for _, row in tqdm(grouped.iterrows(),desc="Saving matching scores and gradients", total=len(grouped)):
+    for _, row in tqdm(
+        grouped.iterrows(),
+        desc="Saving matching scores and gradients",
+        total=len(grouped),
+    ):
         wsi_name = row["wsi_name"]
         patch_files = row["patchFile"]
         patch_coords = row["patch_coords"]
         matching_scores = row["matching_score"]
         grads = row["grad"]
-        save_wsi_matching_scores(matching_scores, grads, patch_files, patch_coords, wsi_name, artifacts_dir)
-            
+        save_wsi_matching_scores(
+            matching_scores, grads, patch_files, patch_coords, wsi_name, artifacts_dir
+        )
+
     return None
 
-def save_wsi_matching_scores(matching_scores: List[float], grads: List[np.ndarray], patch_files: List[str], patch_coords: List[Tuple[int, int, int, int]], wsi_name: str, artifacts_dir: str) -> None:
+
+def save_wsi_matching_scores(
+    matching_scores: List[float],
+    grads: List[np.ndarray],
+    patch_files: List[str],
+    patch_coords: List[Tuple[int, int, int, int]],
+    wsi_name: str,
+    artifacts_dir: str,
+) -> None:
     wsi_basename = os.path.basename(wsi_name.split("_")[0])
     wsi_basename = os.path.splitext(wsi_basename)[0]
-    tiff_name = os.path.join("gbdata/tiny", wsi_basename +"_x0.625_z0.tif")
+    tiff_name = os.path.join("gbdata/tiny", wsi_basename + "_x0.625_z0.tif")
     tiny_wsi = pyvips.Image.new_from_file(tiff_name)
-    wsi = tiny_wsi.numpy() # h, w, c
+    wsi = tiny_wsi.numpy()  # h, w, c
     min_matching_score = min(matching_scores)
     max_matching_score = max(matching_scores)
     # normalize the matching scores to the range [0, 1]
-    if max_matching_score == min_matching_score: # this happens for some bad images
+    if max_matching_score == min_matching_score:  # this happens for some bad images
         matching_scores = [min_matching_score for _ in matching_scores]
     else:
-        matching_scores = [(score - min_matching_score) / (max_matching_score - min_matching_score) for score in matching_scores]
+        matching_scores = [
+            (score - min_matching_score) / (max_matching_score - min_matching_score)
+            for score in matching_scores
+        ]
     # create a heatmap for the matching scores and overlap it with the wsi
     heatmap = np.zeros((wsi.shape[0], wsi.shape[1]))
     best_patch = None
     best_patch_score = -1
     best_patch_coords = patch_coords[0]
     best_grad = grads[0]
-    for matching_score, patch_coord, patch_file, grad in zip(matching_scores, patch_coords, patch_files, grads):
+    for matching_score, patch_coord, patch_file, grad in zip(
+        matching_scores, patch_coords, patch_files, grads
+    ):
         x, y, w, h = patch_coord
         # fill the heatmap with the matching score
         heatmap[y:h, x:w] = matching_score
@@ -285,9 +354,9 @@ def save_wsi_matching_scores(matching_scores: List[float], grads: List[np.ndarra
 
     # normalize the heatmap
     # overlap the heatmap with the wsi
-    cmap = plt.get_cmap('plasma')
+    cmap = plt.get_cmap("plasma")
     heatmap = cmap(heatmap)
-    heatmap = heatmap[:, :, :3] # remove the alpha channel
+    heatmap = heatmap[:, :, :3]  # remove the alpha channel
     heatmap = heatmap * 255
     blend = wsi * 0.5 + heatmap * 0.5
     # draw a rectangle around the best patch
@@ -298,14 +367,16 @@ def save_wsi_matching_scores(matching_scores: List[float], grads: List[np.ndarra
     blend_name = wsi_basename + "_scores.png"
     blend_name = os.path.join(artifacts_dir, blend_name)
     Image.fromarray(blend).save(blend_name)
-    Image.fromarray(wsi).save(os.path.join(artifacts_dir,wsi_basename+".png"))
-    
+    Image.fromarray(wsi).save(os.path.join(artifacts_dir, wsi_basename + ".png"))
+
     # Compute a heatmap over the gradient of the best patch
     best_grad_abs = np.abs(best_grad)
     # average the channels
     best_grad_abs = np.mean(best_grad_abs, axis=0)
     # Normalize the gradient to the range [0, 1]
-    best_grad_normalized = (best_grad_abs - np.min(best_grad_abs)) / (np.max(best_grad_abs) - np.min(best_grad_abs))
+    best_grad_normalized = (best_grad_abs - np.min(best_grad_abs)) / (
+        np.max(best_grad_abs) - np.min(best_grad_abs)
+    )
     # mask values smaller than a threshold
     best_grad_normalized[best_grad_normalized < 0.1] = 0
     best_grad_normalized = cmap(best_grad_normalized)[:, :, :3]
@@ -313,30 +384,37 @@ def save_wsi_matching_scores(matching_scores: List[float], grads: List[np.ndarra
     # open the best patch image (it has the same size as the heatmap) as numpy array
     best_patch_img = np.array(Image.open(best_patch))
     # blend the heatmap with the best patch image
-    blend_patch = best_patch_img*0.25 + best_grad_normalized*0.75
+    blend_patch = best_patch_img * 0.25 + best_grad_normalized * 0.75
     blend_patch = Image.fromarray(blend_patch.astype(np.uint8))
     # get the basename of the best patch image
     wsi_patch_basename = os.path.basename(best_patch)
     wsi_patch_basename = os.path.splitext(wsi_patch_basename)[0]
     # save the blended image
-    blend_patch.save(os.path.join(artifacts_dir, f'{wsi_patch_basename}_gradcam.png'))
+    blend_patch.save(os.path.join(artifacts_dir, f"{wsi_patch_basename}_gradcam.png"))
     # save the original best patch image
-    Image.fromarray(best_patch_img.astype(np.uint8)).save(os.path.join(artifacts_dir, wsi_patch_basename + '_original.png'))
+    Image.fromarray(best_patch_img.astype(np.uint8)).save(
+        os.path.join(artifacts_dir, wsi_patch_basename + "_original.png")
+    )
 
     return None
 
-def perform_attention_on_rna(model: torch.nn.Module,
-                             val_loader: Iterable, 
-                             device: torch.device,
-                             gene_names: Dict, 
-                             artifacts_dir: str) -> None:
 
+def perform_attention_on_rna(
+    model: torch.nn.Module,
+    val_loader: Iterable,
+    device: torch.device,
+    gene_names: Dict,
+    artifacts_dir: str,
+) -> None:
     relevant_genes_path = os.path.join(artifacts_dir, "relevant_genes_val.csv")
-    process_oncopole_rna_data(model, val_loader, device, gene_names, artifacts_dir, relevant_genes_path)
+    process_oncopole_rna_data(
+        model, val_loader, device, gene_names, artifacts_dir, relevant_genes_path
+    )
 
-    return 
+    return
 
-def visualize(config:dict,gradcam_on_rna:bool) -> None:
+
+def visualize(config: dict, gradcam_on_rna: bool) -> None:
     # Distribution mode
     dist_params = dst_tools.init_distributed_mode()
     device = torch.device(config["device"])
@@ -345,7 +423,9 @@ def visualize(config:dict,gradcam_on_rna:bool) -> None:
     commit = git_utils.get_commit_hash()
 
     # For reproducibility
-    seed = config["manual_seed"] + dist_params["rank"] if dist_params["distributed"] else 0
+    seed = (
+        config["manual_seed"] + dist_params["rank"] if dist_params["distributed"] else 0
+    )
     initialization.set_deterministic_start(seed)
 
     # Run Mlflow logger
@@ -370,7 +450,9 @@ def visualize(config:dict,gradcam_on_rna:bool) -> None:
     val_dataloader_params = config["val_dataloader_params"]
     val_dataset = copy.deepcopy(dataset)
     val_dataset.tumor_dataset.train = False
-    val_loader = torch.utils.data.DataLoader(val_dataset, **val_dataloader_params, shuffle=False)
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, **val_dataloader_params, shuffle=False
+    )
 
     # Get gene names
     gene_names = dataset.rna_dataset.genes_per_cluster
@@ -381,12 +463,16 @@ def visualize(config:dict,gradcam_on_rna:bool) -> None:
 
     # Get rna encoder
     rna_model_params = config["rna_model_params"]
-    rna_model_params["genes_per_cluster"] = dataset.genes_per_cluster if hasattr(dataset, "genes_per_cluster") else None
+    rna_model_params["genes_per_cluster"] = (
+        dataset.genes_per_cluster if hasattr(dataset, "genes_per_cluster") else None
+    )
     rna_model = rna_encoder.AttentionRNA(**rna_model_params)
 
     # Get multimodal model
     multimodal_model_params = config["multimodal_model_params"]
-    model = CoattentionModel(**multimodal_model_params, img_model=img_model, rna_model=rna_model)
+    model = CoattentionModel(
+        **multimodal_model_params, img_model=img_model, rna_model=rna_model
+    )
 
     # Load model
     if config["pretrained_path"]:
@@ -403,4 +489,3 @@ def visualize(config:dict,gradcam_on_rna:bool) -> None:
     else:
         print("======= Running gradcam on WSI data =======")
         process_oncopole_wsi_data(model, val_loader, device, artifacts_dir)
-

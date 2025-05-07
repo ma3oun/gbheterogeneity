@@ -39,11 +39,11 @@ def log_config(config: Dict) -> None:
             log_params(params=value, prefix=key)
         else:
             print("Cannot log param: {}".format(key))
- 
- 
+
+
 def log_environment_name() -> None:
     print("Saving environment name")
-    env_name = os.environ['CONDA_DEFAULT_ENV']
+    env_name = os.environ["CONDA_DEFAULT_ENV"]
     mlflow.log_param(key="env_name", value=env_name)
 
 
@@ -87,7 +87,9 @@ def log_image(image: torch.Tensor, image_file: str, prefix: str = "") -> None:
     mlflow.log_image(image=np_image, artifact_file=image_file)
 
 
-def log_image_batch(image: torch.Tensor, image_file: str, n_images=8, n_rows=8, prefix="") -> None:
+def log_image_batch(
+    image: torch.Tensor, image_file: str, n_images=8, n_rows=8, prefix=""
+) -> None:
     if prefix:
         image_file = prefix + "_" + image_file
     image = utils.make_grid(image[:n_images, :, :, :], nrow=n_rows)
@@ -133,7 +135,9 @@ def log_metrics_list(metrics_list: List[Dict], step: int, prefix="") -> None:
     if length:
         keys = list(metrics_list[0].keys())
         for key in keys:
-            list_value = [metric[key] for metric in metrics_list if metric[key] is not None]
+            list_value = [
+                metric[key] for metric in metrics_list if metric[key] is not None
+            ]
             if len(list_value):
                 avg_value = torch.stack(list_value).mean()
                 log_metric(key, avg_value, step, prefix)

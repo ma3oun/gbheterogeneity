@@ -37,7 +37,6 @@ class Trainer(simple_trainer.SimpleDistributedTrainer):
         margin: float = None,
         **kwargs,
     ) -> None:
-
         super().__init__(
             start_epoch=start_epoch,
             max_epochs=max_epochs,
@@ -147,8 +146,8 @@ class Trainer(simple_trainer.SimpleDistributedTrainer):
 
         if self.dist_params["distributed"]:
             model = torch.nn.parallel.DistributedDataParallel(
-                    model, device_ids=[self.dist_params["gpu"]]
-                )
+                model, device_ids=[self.dist_params["gpu"]]
+            )
 
         self.optimizer.zero_grad()
 
@@ -203,7 +202,7 @@ class Trainer(simple_trainer.SimpleDistributedTrainer):
                     self.validation_epoch_end(val_outputs)
 
                     mean_val_loss = np.mean(
-                        [l[self.loss_key].item() for l in val_outputs]
+                        [output[self.loss_key].item() for output in val_outputs]
                     )
                     if (
                         self.best_model_score is None

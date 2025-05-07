@@ -15,11 +15,13 @@ from typing import List, Tuple, Dict, Callable
 from easydict import EasyDict
 from .patching import Patcher
 
+
 def _categorize(df: pd.DataFrame, keys: List[str]) -> pd.DataFrame:
     out = df.copy(True)
     for key in keys:
         out[key] = out[key].astype("category").cat.codes
     return out
+
 
 def _loadPatientsCSV(csvFile: str) -> dict:
     """Load patients data from preprocessed CSV
@@ -48,6 +50,7 @@ def _loadPatientsCSV(csvFile: str) -> dict:
     df = _categorize(patientsDF, ["Sex", "Tumor localization"])
 
     return df.T.to_dict()
+
 
 def _loadLineageCSV(csvFile: str) -> dict:
     """Load lineage data for each tumor cell lineage
@@ -80,6 +83,7 @@ def _loadLineageCSV(csvFile: str) -> dict:
     fullData = lineageDF.T.to_dict()
     return fullData
 
+
 class PatchDataset(Dataset):
     TRAIN_VAL_RATIO = 0.9
 
@@ -99,11 +103,11 @@ class PatchDataset(Dataset):
         self.patchParams = patchParams
         self.train = train
         self.transform = transform
-        if not patientCSV is None:
+        if patientCSV is not None:
             self.patientData = _loadPatientsCSV(patientCSV)
         else:
             self.patientData = None
-        if not lineageCSV is None:
+        if lineageCSV is not None:
             self.lineageData = _loadLineageCSV(lineageCSV)
         else:
             self.lineageData = None
@@ -120,7 +124,7 @@ class PatchDataset(Dataset):
         print(f"Val files: {len(self.valFiles)}")
 
     def _trainValSplit(self, metadataFile: str) -> Tuple[str, str]:
-        with open(metadataFile, "r") as f:
+        with open(metadataFile) as f:
             metadata = yaml.load(f, Loader=yaml.BaseLoader)
         datasetRootDir = pathlib.Path(metadataFile).parent
         filesKey = f"{self.patchType}Files"
@@ -190,10 +194,10 @@ class PatchDataset(Dataset):
             y2=int(y2),
             patchFile=str(patchFile),
         )
-        if not self.patientData is None:
+        if self.patientData is not None:
             patientDict = self.patientData[f"SR{patientID}"]
             labels.update(patientDict)
-        if not self.lineageData is None:
+        if self.lineageData is not None:
             lineageData = self.lineageData[f"SR{patientID}{int(lineage)}"]
             labels.update(lineageData)
         return labels
@@ -223,7 +227,7 @@ class PatchDataset(Dataset):
         patchFile = files[imgIdx]
 
         patchData = Image.open(patchFile).convert("RGB")
-        if not self.transform is None:
+        if self.transform is not None:
             patchData = self.transform(patchData)
         labels = self.__extractLabelInfo__(patchFile)
         return patchData, labels
@@ -259,6 +263,7 @@ class TumorDataset(PatchDataset):
             lineageCSV,
         )
 
+
 class NoiseDataset(data.Dataset):
     def __init__(self) -> None:
         self.length = 1000
@@ -271,5 +276,7 @@ class NoiseDataset(data.Dataset):
     def __getitem__(self, index: int) -> Dict:
         patient_id = random.randrange(10)
         random_image = torch.rand(self.channels, self.image_size, self.image_size)
-        random_image = (random_image - random_image.min()) / (random_image.max() - random_image.min() + 1e-9)
+        random_image = (random_image - random_image.min()) / (
+            random_image.max() - random_image.min() + 1e-9
+        )
         return random_image, patient_id

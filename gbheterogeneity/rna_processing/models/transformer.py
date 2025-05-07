@@ -7,6 +7,7 @@ import timm.layers as layers
 from typing import Callable, Dict
 from gbheterogeneity.utils.pytorch.parameter_getter import count_parameters
 
+
 class Mlp(torch.nn.Module):
     def __init__(
         self,
@@ -192,7 +193,7 @@ class RNAAttentionEncoder(torch.nn.Module):
         embedding_dim: int,
         dropout_prob: float,
         num_heads: int,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__()
 
@@ -269,7 +270,7 @@ class AttentionRNA(torch.nn.Module):
         dropout_prob: float,
         num_heads: int,
         projection_dim: int,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__()
 
@@ -377,7 +378,7 @@ class AttentionRNASurvivalTime(RNAAttentionEncoder):
         num_heads: int,
         projection_dim: int,
         freeze_encoder: bool,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(
             genes_per_cluster=genes_per_cluster,
@@ -405,4 +406,3 @@ class AttentionRNASurvivalTime(RNAAttentionEncoder):
         predictions = self.survival_time_head(global_representation)
 
         return predictions
-

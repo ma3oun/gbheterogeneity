@@ -10,7 +10,7 @@ import gbheterogeneity.utils.pytorch.distributed_tools as dst_tools
 
 from typing import Union, List, Dict, Tuple
 from tqdm import tqdm
-#from apex import amp as ampp
+# from apex import amp as ampp
 
 
 class SimpleDistributedTrainer(gen_trainer.GenericTrainer):
@@ -30,7 +30,6 @@ class SimpleDistributedTrainer(gen_trainer.GenericTrainer):
         optimizer: torch.optim.Optimizer = None,
         scheduler: torch.optim.lr_scheduler._LRScheduler = None,
     ) -> None:
-
         super().__init__()
         self.start_epoch = int(start_epoch)
         self.end_epoch = int(max_epochs)
@@ -204,11 +203,11 @@ class SimpleDistributedTrainer(gen_trainer.GenericTrainer):
                     self.save_directory, f"best_trained_model_{self.epoch}.bin"
                 )
                 torch.save(model_to_save.state_dict(), new_best_model_path)
-                if not self.best_model_path is None:
+                if self.best_model_path is not None:
                     os.remove(self.best_model_path)
                 self.best_model_path = new_best_model_path
             else:
-                if not self.best_model_path is None:
+                if self.best_model_path is not None:
                     print("----- Last validation was not the best -----")
 
             checkpoint_path = "ckpt_epoch" + str(self.epoch) + ".tar"
@@ -220,7 +219,7 @@ class SimpleDistributedTrainer(gen_trainer.GenericTrainer):
                 "epoch": self.epoch,
                 "loss": loss_dict[self.loss_key].item(),
             }
-            #if self.dist_params["apex"]:
+            # if self.dist_params["apex"]:
             #    ckptData.update({"amp": ampp.state_dict()})
             torch.save(
                 ckptData,
@@ -250,7 +249,7 @@ class SimpleDistributedTrainer(gen_trainer.GenericTrainer):
         self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         epoch = checkpoint["epoch"] + 1
         loss = checkpoint["loss"]
-        #if self.dist_params["apex"]:
+        # if self.dist_params["apex"]:
         #    ampp.load_state_dict(checkpoint["amp"])
         del checkpoint
 

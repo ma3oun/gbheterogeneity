@@ -39,7 +39,7 @@ class AllPositivePairSelector(PairSelector):
     """
 
     def __init__(self, balance: bool = True):
-        super(AllPositivePairSelector, self).__init__()
+        super().__init__()
         self.balance = balance
 
     def get_pairs(self, embeddings: torch.Tensor, labels: torch.Tensor):
@@ -67,7 +67,7 @@ class HardNegativePairSelector(PairSelector):
     """
 
     def __init__(self, cpu=True):
-        super(HardNegativePairSelector, self).__init__()
+        super().__init__()
         self.cpu = cpu
 
     def get_pairs(self, embeddings, labels):
@@ -115,7 +115,7 @@ class AllTripletSelector(TripletSelector):
     """
 
     def __init__(self):
-        super(AllTripletSelector, self).__init__()
+        super().__init__()
 
     def get_triplets(self, embeddings, labels):
         labels = labels.cpu().data.numpy()
@@ -167,7 +167,7 @@ class FunctionNegativeTripletSelector(TripletSelector):
     """
 
     def __init__(self, margin, negative_selection_fn, cpu=True):
-        super(FunctionNegativeTripletSelector, self).__init__()
+        super().__init__()
         self.cpu = cpu
         self.margin = margin
         self.negative_selection_fn = negative_selection_fn
@@ -251,12 +251,11 @@ class OnlineTripletLoss(nn.Module):
     """
 
     def __init__(self, margin, triplet_selector):
-        super(OnlineTripletLoss, self).__init__()
+        super().__init__()
         self.margin = margin
         self.triplet_selector = triplet_selector
 
     def forward(self, embeddings, target):
-
         triplets = self.triplet_selector.get_triplets(embeddings, target)
 
         ap_distances = (

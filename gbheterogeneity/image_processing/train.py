@@ -11,7 +11,8 @@ from .data.datasets import TumorDataset
 from .models.encoder import ImageEncoder
 from .trainer import Trainer
 
-def train(config:dict) -> None:
+
+def train(config: dict) -> None:
     # Distribution mode
     dist_params = dst_tools.init_distributed_mode()
     device = torch.device(config["trainer_params"]["device"])
@@ -108,7 +109,6 @@ def train(config:dict) -> None:
     scheduler_getter = getattr(scheduler_module, scheduler_name)
     scheduler = scheduler_getter(optimizer, **scheduler_params)
 
-
     # Get trainer
     logging_params = config["logging_params"]
     trainer_params = config["trainer_params"]
@@ -123,4 +123,3 @@ def train(config:dict) -> None:
 
     print("======= Training Image data =======")
     trainer.fit(model, train_loader, val_loader)
-

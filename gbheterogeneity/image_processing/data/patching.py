@@ -1,8 +1,8 @@
 from typing import List, Tuple
 import cv2
-import os, pathlib
+import os
+import pathlib
 from easydict import EasyDict
-from typing import List
 import numpy as np
 import yaml as yaml
 
@@ -18,6 +18,7 @@ def __coord2str__(coords: Tuple[Tuple[int, int], Tuple[int, int]]) -> str:
     """
     s = f"{coords[0][0]:05d}_{coords[0][1]:05d}_{coords[1][0]:05d}_{coords[1][1]:05d}"
     return s
+
 
 class Patch:
     def __init__(
@@ -67,6 +68,7 @@ class Patch:
         cv2.imwrite(fullPath, self.data)
         return
 
+
 class Patcher:
     def __init__(
         self, patchParams: EasyDict, outputDir: str, rootDir: str = None
@@ -74,7 +76,9 @@ class Patcher:
         if rootDir is not None:
             self.root = self.__get_root__(rootDir)
         else:
-            print("No root directory provided. Assuming patches have already been extracted.")
+            print(
+                "No root directory provided. Assuming patches have already been extracted."
+            )
             self.root = None
         self.outputDir = outputDir
 
@@ -102,12 +106,10 @@ class Patcher:
 
     def __getPatchFiles__(self, patchType: str):
         if os.path.exists(self.metadataFile):
-            print(
-                f"Found metadata file. Assuming patches have already been extracted."
-            )
+            print("Found metadata file. Assuming patches have already been extracted.")
         else:
             raise RuntimeError(
-                f"Metadata file not found. Make sure data has been downloaded at the specified folder"
+                "Metadata file not found. Make sure data has been downloaded at the specified folder"
             )
         folderList = [
             os.path.join(self.outputDir, f)

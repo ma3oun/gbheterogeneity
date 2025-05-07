@@ -10,12 +10,14 @@ from typing import Callable, Dict
 class Mlp(torch.nn.Module):
     """MLP as used in Vision Transformer, MLP-Mixer and related networks"""
 
-    def __init__(self,
-                 in_features: int,
-                 hidden_features: int = None,
-                 out_features: int = None,
-                 act_layer: Callable = torch.nn.GELU,
-                 drop: float = 0.0) -> None:
+    def __init__(
+        self,
+        in_features: int,
+        hidden_features: int = None,
+        out_features: int = None,
+        act_layer: Callable = torch.nn.GELU,
+        drop: float = 0.0,
+    ) -> None:
         super().__init__()
 
         # Hyperparameters
@@ -40,13 +42,15 @@ class Mlp(torch.nn.Module):
 class Attention(torch.nn.Module):
     """Attention layer as used in Vision Transformer"""
 
-    def __init__(self,
-                 dim: int,
-                 num_heads: int = 8,
-                 qkv_bias: bool = False,
-                 qk_scale: float = None,
-                 attn_drop: float = 0.0,
-                 proj_drop: float = 0.0) -> None:
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int = 8,
+        qkv_bias: bool = False,
+        qk_scale: float = None,
+        attn_drop: float = 0.0,
+        proj_drop: float = 0.0,
+    ) -> None:
         super().__init__()
 
         # Hyperparameters
@@ -78,9 +82,19 @@ class Attention(torch.nn.Module):
 
     def forward(self, x: torch.Tensor, register_hook: bool = False) -> torch.Tensor:
         batch_size, num_tokens, embedding_dim = x.shape
-        qkv_with_heads_shape = batch_size, num_tokens, 3, self.num_heads, embedding_dim // self.num_heads
+        qkv_with_heads_shape = (
+            batch_size,
+            num_tokens,
+            3,
+            self.num_heads,
+            embedding_dim // self.num_heads,
+        )
         qkv = self.qkv(x).reshape(*qkv_with_heads_shape).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv[0], qkv[1], qkv[2]  # q, k and v tensors of shape (batch_size, num_heads, num_tokens, dim_head)
+        q, k, v = (
+            qkv[0],
+            qkv[1],
+            qkv[2],
+        )  # q, k and v tensors of shape (batch_size, num_heads, num_tokens, dim_head)
 
         attn = (q @ k.transpose(-2, -1)) * self.scale
         attn = attn.softmax(dim=-1)
@@ -99,17 +113,19 @@ class Attention(torch.nn.Module):
 class Block(torch.nn.Module):
     """Attention block as used in Vision Transformer"""
 
-    def __init__(self,
-                 dim: int,
-                 num_heads: int,
-                 mlp_ratio: int = 4.0,
-                 qkv_bias: bool = False,
-                 qk_scale: float = None,
-                 drop: float = 0.0,
-                 attn_drop: float = 0.0,
-                 drop_path: float = 0.0,
-                 act_layer: Callable = torch.nn.GELU,
-                 norm_layer: Callable = torch.nn.LayerNorm) -> None:
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int,
+        mlp_ratio: int = 4.0,
+        qkv_bias: bool = False,
+        qk_scale: float = None,
+        drop: float = 0.0,
+        attn_drop: float = 0.0,
+        drop_path: float = 0.0,
+        act_layer: Callable = torch.nn.GELU,
+        norm_layer: Callable = torch.nn.LayerNorm,
+    ) -> None:
         super().__init__()
 
         # Hyperparameters
@@ -117,15 +133,24 @@ class Block(torch.nn.Module):
 
         # Layers
         self.norm1 = norm_layer(dim)
-        self.attn = Attention(dim=dim, 
-                              num_heads=num_heads, 
-                              qkv_bias=qkv_bias, 
-                              qk_scale=qk_scale, 
-                              attn_drop=attn_drop, 
-                              proj_drop=drop)
-        self.drop_path = layers.DropPath(drop_path) if drop_path > 0.0 else torch.nn.Identity()
+        self.attn = Attention(
+            dim=dim,
+            num_heads=num_heads,
+            qkv_bias=qkv_bias,
+            qk_scale=qk_scale,
+            attn_drop=attn_drop,
+            proj_drop=drop,
+        )
+        self.drop_path = (
+            layers.DropPath(drop_path) if drop_path > 0.0 else torch.nn.Identity()
+        )
         self.norm2 = norm_layer(dim)
-        self.mlp = Mlp(in_features=dim, hidden_features=mlp_hidden_dim, act_layer=act_layer, drop=drop)
+        self.mlp = Mlp(
+            in_features=dim,
+            hidden_features=mlp_hidden_dim,
+            act_layer=act_layer,
+            drop=drop,
+        )
 
     def forward(self, x: torch.Tensor, register_hook: bool = False) -> torch.Tensor:
         x = x + self.drop_path(self.attn(self.norm1(x), register_hook=register_hook))
@@ -138,20 +163,22 @@ class VisionTransformer(torch.nn.Module):
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale`: https://arxiv.org/abs/2010.11929
     """
 
-    def __init__(self,
-                 img_size: int = 224,
-                 patch_size: int = 16,
-                 in_chans: int = 3,
-                 embed_dim: int = 768,
-                 depth: int = 12,
-                 num_heads: int = 12,
-                 mlp_ratio: int = 4.0,
-                 qkv_bias: bool = True,
-                 qk_scale: float = None,
-                 drop_rate: float = 0.0,
-                 attn_drop_rate: float = 0.0,
-                 drop_path_rate: float = 0.0,
-                 norm_layer: Callable = None) -> None:
+    def __init__(
+        self,
+        img_size: int = 224,
+        patch_size: int = 16,
+        in_chans: int = 3,
+        embed_dim: int = 768,
+        depth: int = 12,
+        num_heads: int = 12,
+        mlp_ratio: int = 4.0,
+        qkv_bias: bool = True,
+        qk_scale: float = None,
+        drop_rate: float = 0.0,
+        attn_drop_rate: float = 0.0,
+        drop_path_rate: float = 0.0,
+        norm_layer: Callable = None,
+    ) -> None:
         """
         Args:
             img_size (int, tuple): input image size.
@@ -171,31 +198,42 @@ class VisionTransformer(torch.nn.Module):
         super().__init__()
 
         # Hyperparameters
-        self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
+        self.num_features = self.embed_dim = (
+            embed_dim  # num_features for consistency with other models
+        )
         norm_layer = norm_layer or functools.partial(torch.nn.LayerNorm, eps=1e-6)
 
         # Layers
         # Image to patches
-        self.patch_embed = vision_t.PatchEmbed(img_size=img_size, 
-                                               patch_size=patch_size, 
-                                               in_chans=in_chans, 
-                                               embed_dim=embed_dim)
+        self.patch_embed = vision_t.PatchEmbed(
+            img_size=img_size,
+            patch_size=patch_size,
+            in_chans=in_chans,
+            embed_dim=embed_dim,
+        )
         num_patches = self.patch_embed.num_patches
         self.cls_token = torch.nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.pos_embed = torch.nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
         self.pos_drop = torch.nn.Dropout(p=drop_rate)
         # Attention blocks
         # Define drop_path for each block using stochastic depth decay rule
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  
-        self.blocks = torch.nn.ModuleList([Block(dim=embed_dim,
-                                                 num_heads=num_heads,
-                                                 mlp_ratio=mlp_ratio,
-                                                 qkv_bias=qkv_bias,
-                                                 qk_scale=qk_scale,
-                                                 drop=drop_rate,
-                                                 attn_drop=attn_drop_rate,
-                                                 drop_path=dpr[i],
-                                                 norm_layer=norm_layer) for i in range(depth)])
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        self.blocks = torch.nn.ModuleList(
+            [
+                Block(
+                    dim=embed_dim,
+                    num_heads=num_heads,
+                    mlp_ratio=mlp_ratio,
+                    qkv_bias=qkv_bias,
+                    qk_scale=qk_scale,
+                    drop=drop_rate,
+                    attn_drop=attn_drop_rate,
+                    drop_path=dpr[i],
+                    norm_layer=norm_layer,
+                )
+                for i in range(depth)
+            ]
+        )
         self.norm = norm_layer(embed_dim)
 
         # Initialize weights
@@ -237,7 +275,9 @@ class VisionTransformer(torch.nn.Module):
         return x
 
 
-def interpolate_pos_embed(pos_embed_checkpoint: torch.Tensor, visual_encoder: torch.nn.Module) -> torch.Tensor:
+def interpolate_pos_embed(
+    pos_embed_checkpoint: torch.Tensor, visual_encoder: torch.nn.Module
+) -> torch.Tensor:
     # interpolate position embedding
     embedding_size = pos_embed_checkpoint.shape[-1]
     num_patches = visual_encoder.patch_embed.num_patches
@@ -252,11 +292,12 @@ def interpolate_pos_embed(pos_embed_checkpoint: torch.Tensor, visual_encoder: to
         extra_tokens = pos_embed_checkpoint[:, :num_extra_tokens]
         # only the position tokens are interpolated
         pos_tokens = pos_embed_checkpoint[:, num_extra_tokens:]
-        pos_tokens = pos_tokens.reshape(-1, orig_size, orig_size, embedding_size).permute(0, 3, 1, 2)
-        pos_tokens = torch.nn.functional.interpolate(pos_tokens, 
-                                                     size=(new_size, new_size), 
-                                                     mode="bicubic", 
-                                                     align_corners=False)
+        pos_tokens = pos_tokens.reshape(
+            -1, orig_size, orig_size, embedding_size
+        ).permute(0, 3, 1, 2)
+        pos_tokens = torch.nn.functional.interpolate(
+            pos_tokens, size=(new_size, new_size), mode="bicubic", align_corners=False
+        )
         pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(1, 2)
         new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
         print("Reshape position embedding from %d to %d" % (orig_size**2, new_size**2))

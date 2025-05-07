@@ -16,7 +16,9 @@ def train(config: dict) -> None:
     commit = git_utils.get_commit_hash()
 
     # For reproducibility
-    seed = config["manual_seed"] + dist_params["rank"] if dist_params["distributed"] else 0
+    seed = (
+        config["manual_seed"] + dist_params["rank"] if dist_params["distributed"] else 0
+    )
     initialization.set_deterministic_start(seed)
 
     # Run Mlflow logger
@@ -26,7 +28,9 @@ def train(config: dict) -> None:
         mlflow_logging.log_config(config)
         mlflow_logging.log_commit(commit)
         mlflow_logging.log_environment_name()
-        model_dir = mlflow_logging.create_model_directory(logger_params["experiment_name"])
+        model_dir = mlflow_logging.create_model_directory(
+            logger_params["experiment_name"]
+        )
         mlflow_logging.log_model_dir(model_dir)
     else:
         model_dir = ""
@@ -44,18 +48,26 @@ def train(config: dict) -> None:
     train_dataset_getter = getattr(data_module, dataset_name)
 
     # Initialize the dataset and create the train_loader
-    train_loader = train_dataset_getter(dataset_params, dataloader_params, num_gpus, global_rank, train=True)
+    train_loader = train_dataset_getter(
+        dataset_params, dataloader_params, num_gpus, global_rank, train=True
+    )
 
     val_dataset_name = config["val_dataset_name"]
     val_dataset_params = config["val_dataset_params"]
     val_dataloader_params = config["val_dataloader_params"]
     val_dataset_getter = getattr(data_module, val_dataset_name)
-    val_loader = val_dataset_getter(val_dataset_params, val_dataloader_params, num_gpus, global_rank, train=False)
+    val_loader = val_dataset_getter(
+        val_dataset_params, val_dataloader_params, num_gpus, global_rank, train=False
+    )
 
     # Get model
     model_name = config["model_name"]
     model_params = config["model_params"]
-    model_params["genes_per_cluster"] = train_loader.genes_per_cluster if hasattr(train_loader, "genes_per_cluster") else None
+    model_params["genes_per_cluster"] = (
+        train_loader.genes_per_cluster
+        if hasattr(train_loader, "genes_per_cluster")
+        else None
+    )
     model_module = importlib.import_module("gbheterogeneity.rna_processing.models")
     model_registry = getattr(model_module, model_name)
     model = model_registry(**model_params)
@@ -81,12 +93,14 @@ def train(config: dict) -> None:
     trainer_params = config["trainer_params"]
     trainer_module = importlib.import_module("gbheterogeneity.rna_processing.trainers")
     trainer_getter = getattr(trainer_module, trainer_name)
-    trainer = trainer_getter(logging_params,
-                            trainer_params,
-                            save_directory=model_dir,
-                            dist_params=dist_params,
-                            optimizer=optimizer, 
-                            scheduler=scheduler)
+    trainer = trainer_getter(
+        logging_params,
+        trainer_params,
+        save_directory=model_dir,
+        dist_params=dist_params,
+        optimizer=optimizer,
+        scheduler=scheduler,
+    )
 
     print("======= Training RNA data =======")
     trainer.fit(model, train_loader, val_loader)

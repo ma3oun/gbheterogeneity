@@ -15,6 +15,7 @@ dependencies = [
     "numpy>=2.2.4",
     "opencv-python>=4.11.0.86",
     "pandas>=2.2.3",
+    "pre-commit>=4.2.0",
     "pyvips[binary]>=3.0.0",
     "scikit-network>=0.33.1",
     "scipy>=1.15.2",

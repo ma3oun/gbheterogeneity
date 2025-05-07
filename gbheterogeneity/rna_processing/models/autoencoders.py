@@ -6,18 +6,24 @@ from typing import List
 
 
 class LinearBlock(torch.nn.Module):
-    def __init__(self, input_dim: int, output_dim: int, dropout_prob: float = None) -> None:
+    def __init__(
+        self, input_dim: int, output_dim: int, dropout_prob: float = None
+    ) -> None:
         super().__init__()
 
         if dropout_prob:
-            self.linear_layer = torch.nn.Sequential(torch.nn.Linear(input_dim, output_dim),
-                                                    torch.nn.ReLU(),
-                                                    torch.nn.BatchNorm1d(output_dim),
-                                                    torch.nn.Dropout(dropout_prob))
+            self.linear_layer = torch.nn.Sequential(
+                torch.nn.Linear(input_dim, output_dim),
+                torch.nn.ReLU(),
+                torch.nn.BatchNorm1d(output_dim),
+                torch.nn.Dropout(dropout_prob),
+            )
         else:
-            self.linear_layer = torch.nn.Sequential(torch.nn.Linear(input_dim, output_dim),
-                                                    torch.nn.ReLU(),
-                                                    torch.nn.BatchNorm1d(output_dim))
+            self.linear_layer = torch.nn.Sequential(
+                torch.nn.Linear(input_dim, output_dim),
+                torch.nn.ReLU(),
+                torch.nn.BatchNorm1d(output_dim),
+            )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.linear_layer(x)
@@ -31,7 +37,9 @@ class RNAEncoder(torch.nn.Module):
         encoding_layers = []
         num_layers = len(layer_dims[:-2])
         for i in range(num_layers):
-            encoding_layers.append(LinearBlock(layer_dims[i], layer_dims[i + 1], dropout_probs[i]))
+            encoding_layers.append(
+                LinearBlock(layer_dims[i], layer_dims[i + 1], dropout_probs[i])
+            )
 
         self.encoding_layers = torch.nn.ModuleList(encoding_layers)
         self.last_layer = torch.nn.Linear(layer_dims[-2], layer_dims[-1])
@@ -65,7 +73,14 @@ class RNADecoder(torch.nn.Module):
 
 
 class AutoencoderRNA(torch.nn.Module):
-    def __init__(self, input_dim: int, hidden_dims: List, latent_dim: int, dropout_prob: float,**kwargs) -> None:
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_dims: List,
+        latent_dim: int,
+        dropout_prob: float,
+        **kwargs,
+    ) -> None:
         super().__init__()
 
         # Hyperparams
@@ -80,11 +95,12 @@ class AutoencoderRNA(torch.nn.Module):
         self.decoder = RNADecoder(self.decoding_layer_dims)
 
         # Info
-        print("Number of autoencoder parameters: {}".format(common.count_parameters(self)))
+        print(
+            "Number of autoencoder parameters: {}".format(common.count_parameters(self))
+        )
 
     def forward(self, rna_seq: torch.Tensor) -> torch.Tensor:
         rna_feat = self.encoder(rna_seq)
         rna_rec = self.decoder(rna_feat)
 
         return rna_rec
-

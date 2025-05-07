@@ -25,9 +25,8 @@ class SimpleTrainer(gen_trainer.GenericTrainer):
         resume_file: str = "",
         optimizer: torch.optim.Optimizer = None,
         scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-        **kwargs
+        **kwargs,
     ) -> None:
-
         super().__init__()
         self.start_epoch = int(start_epoch)
         self.end_epoch = int(max_epochs)

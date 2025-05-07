@@ -1,5 +1,6 @@
 from gbheterogeneity.multimodal_processing.rna_retrieval import evaluate
 
+
 def main():
     config = {
         "rna_dataset_params": {
@@ -25,30 +26,24 @@ def main():
                 "neutralColor": 215.0,
                 "tumorMinScore": 13107.2,
                 "neutralMinScore": 42598.4,
-                "maxPatchesPerImage": None
-            }
+                "maxPatchesPerImage": None,
+            },
         },
-        "dataloader_params": {
-            "batch_size": 32,
-            "num_workers": 4
-        },
-        "val_dataloader_params": {
-            "batch_size": 32,
-            "num_workers": 4
-        },
+        "dataloader_params": {"batch_size": 32, "num_workers": 4},
+        "val_dataloader_params": {"batch_size": 32, "num_workers": 4},
         "img_model_params": {
             "image_res": 256,
             "init_deit": False,
             "freeze_vision_encoder": False,
             "freeze_projection_heads": False,
             "vision_width": 768,
-            "embed_dim": 256
+            "embed_dim": 256,
         },
         "rna_model_params": {
             "embedding_dim": 128,
             "dropout_prob": 0.5,
             "num_heads": 8,
-            "projection_dim": 64
+            "projection_dim": 64,
         },
         "multimodal_model_params": {
             "co_attention_dim": 768,
@@ -62,13 +57,13 @@ def main():
         "logger_params": {
             "experiment_name": "paper_v2_RNA_retrieval_best",
             "experiment_dir": "output/mlruns",
-            
         },
         "device": "cuda",
         "manual_seed": 42,
-        "pretrained_path": "trained_models/multimodal_best.bin"
+        "pretrained_path": "trained_models/multimodal_best.bin",
     }
     evaluate(config)
+
 
 if __name__ == "__main__":
     main()

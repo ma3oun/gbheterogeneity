@@ -22,20 +22,26 @@ class ImageEncoder(torch.nn.Module):
         # Build vision encoder
         self.img_size = config["image_res"]
         norm_layer = functools.partial(torch.nn.LayerNorm, eps=1e-6)
-        self.visual_encoder = VisionTransformer(img_size=self.img_size,
-                                                    patch_size=16,
-                                                    embed_dim=768,
-                                                    depth=12,
-                                                    num_heads=12,
-                                                    mlp_ratio=4,
-                                                    qkv_bias=True,
-                                                    norm_layer=norm_layer)
+        self.visual_encoder = VisionTransformer(
+            img_size=self.img_size,
+            patch_size=16,
+            embed_dim=768,
+            depth=12,
+            num_heads=12,
+            mlp_ratio=4,
+            qkv_bias=True,
+            norm_layer=norm_layer,
+        )
 
         # Initilize DEIT model
         if config["init_deit"]:
-            checkpoint = torch.hub.load_state_dict_from_url(url=DEIT_URL, map_location="cpu", check_hash=True)
+            checkpoint = torch.hub.load_state_dict_from_url(
+                url=DEIT_URL, map_location="cpu", check_hash=True
+            )
             state_dict = checkpoint["model"]
-            pos_embed_reshaped = interpolate_pos_embed(state_dict["pos_embed"], self.visual_encoder)
+            pos_embed_reshaped = interpolate_pos_embed(
+                state_dict["pos_embed"], self.visual_encoder
+            )
             state_dict["pos_embed"] = pos_embed_reshaped
             msg = self.visual_encoder.load_state_dict(state_dict, strict=False)
             print(msg)
@@ -66,12 +72,14 @@ class ImageEncoder(torch.nn.Module):
 if __name__ == "__main__":
     print("Attention encoder")
     test_image = torch.rand(4, 3, 256, 256)
-    configuration = {"image_res": 256,
-                     "init_deit": True,
-                     "freeze_vision_encoder": False,
-                     "freeze_projection_heads": False,
-                     "vision_width": 768,
-                     "embed_dim": 256}
+    configuration = {
+        "image_res": 256,
+        "init_deit": True,
+        "freeze_vision_encoder": False,
+        "freeze_projection_heads": False,
+        "vision_width": 768,
+        "embed_dim": 256,
+    }
     encoder_fn = ImageEncoder(configuration)
     image_embeddings, image_features = encoder_fn(test_image)
     print(test_image.shape)

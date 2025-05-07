@@ -1,9 +1,10 @@
-""" Cosine Scheduler
+"""Cosine Scheduler
 
 Cosine LR schedule with warmup, cycle/restarts, noise.
 
 Hacked together by / Copyright 2020 Ross Wightman
 """
+
 import math
 import torch
 
@@ -11,7 +12,7 @@ from typing import Dict, Any
 
 
 class Scheduler:
-    """ Parameter Scheduler Base Class
+    """Parameter Scheduler Base Class
     A scheduler base class that can be used to schedule any optimizer parameter groups.
 
     Unlike the builtin PyTorch schedulers, this is intended to be consistently called
@@ -46,13 +47,22 @@ class Scheduler:
         if initialize:
             for i, group in enumerate(self.optimizer.param_groups):
                 if param_group_field not in group:
-                    raise KeyError(f"{param_group_field} missing from param_groups[{i}]")
-                group.setdefault(self._initial_param_group_field, group[param_group_field])
+                    raise KeyError(
+                        f"{param_group_field} missing from param_groups[{i}]"
+                    )
+                group.setdefault(
+                    self._initial_param_group_field, group[param_group_field]
+                )
         else:
             for i, group in enumerate(self.optimizer.param_groups):
                 if self._initial_param_group_field not in group:
-                    raise KeyError(f"{self._initial_param_group_field} missing from param_groups[{i}]")
-        self.base_values = [group[self._initial_param_group_field] for group in self.optimizer.param_groups]
+                    raise KeyError(
+                        f"{self._initial_param_group_field} missing from param_groups[{i}]"
+                    )
+        self.base_values = [
+            group[self._initial_param_group_field]
+            for group in self.optimizer.param_groups
+        ]
         self.metric = None  # any point to having this for all?
         self.noise_range_t = noise_range_t
         self.noise_pct = noise_pct
@@ -62,7 +72,9 @@ class Scheduler:
         self.update_groups(self.base_values)
 
     def state_dict(self) -> Dict[str, Any]:
-        return {key: value for key, value in self.__dict__.items() if key != "optimizer"}
+        return {
+            key: value for key, value in self.__dict__.items() if key != "optimizer"
+        }
 
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.__dict__.update(state_dict)
@@ -109,7 +121,9 @@ class Scheduler:
                         if abs(noise) < self.noise_pct:
                             break
                 else:
-                    noise = 2 * (torch.rand(1, generator=g).item() - 0.5) * self.noise_pct
+                    noise = (
+                        2 * (torch.rand(1, generator=g).item() - 0.5) * self.noise_pct
+                    )
                 lrs = [v + v * noise for v in lrs]
         return lrs
 
@@ -164,7 +178,9 @@ class CosineLRScheduler(Scheduler):
         self.warmup_prefix = warmup_prefix
         self.t_in_epochs = t_in_epochs
         if self.warmup_t:
-            self.warmup_steps = [(v - warmup_lr_init) / self.warmup_t for v in self.base_values]
+            self.warmup_steps = [
+                (v - warmup_lr_init) / self.warmup_t for v in self.base_values
+            ]
             super().update_groups(self.warmup_lr_init)
         else:
             self.warmup_steps = [1 for _ in self.base_values]
@@ -177,21 +193,24 @@ class CosineLRScheduler(Scheduler):
                 t = t - self.warmup_t
 
             if self.t_mul != 1:
-                i = math.floor(math.log(1 - t / self.t_initial * (1 - self.t_mul), self.t_mul))
-                t_i = self.t_mul ** i * self.t_initial
-                t_curr = t - (1 - self.t_mul ** i) / (1 - self.t_mul) * self.t_initial
+                i = math.floor(
+                    math.log(1 - t / self.t_initial * (1 - self.t_mul), self.t_mul)
+                )
+                t_i = self.t_mul**i * self.t_initial
+                t_curr = t - (1 - self.t_mul**i) / (1 - self.t_mul) * self.t_initial
             else:
                 i = t // self.t_initial
                 t_i = self.t_initial
                 t_curr = t - (self.t_initial * i)
 
-            gamma = self.decay_rate ** i
+            gamma = self.decay_rate**i
             lr_min = self.lr_min * gamma
             lr_max_values = [v * gamma for v in self.base_values]
 
             if self.cycle_limit == 0 or (self.cycle_limit > 0 and i < self.cycle_limit):
                 lrs = [
-                    lr_min + 0.5 * (lr_max - lr_min) * (1 + math.cos(math.pi * t_curr / t_i))
+                    lr_min
+                    + 0.5 * (lr_max - lr_min) * (1 + math.cos(math.pi * t_curr / t_i))
                     for lr_max in lr_max_values
                 ]
             else:
@@ -218,4 +237,8 @@ class CosineLRScheduler(Scheduler):
         if self.t_mul == 1.0:
             return self.t_initial * cycles
         else:
-            return int(math.floor(-self.t_initial * (self.t_mul ** cycles - 1) / (1 - self.t_mul)))
+            return int(
+                math.floor(
+                    -self.t_initial * (self.t_mul**cycles - 1) / (1 - self.t_mul)
+                )
+            )

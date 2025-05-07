@@ -1,5 +1,6 @@
 from gbheterogeneity.multimodal_processing.gradcam_viz import visualize
 
+
 def main():
     config = {
         "rna_dataset_params": {
@@ -25,30 +26,24 @@ def main():
                 "neutralColor": 215.0,
                 "tumorMinScore": 13107.2,
                 "neutralMinScore": 42598.4,
-                "maxPatchesPerImage": None
-            }
+                "maxPatchesPerImage": None,
+            },
         },
-        "dataloader_params": {
-            "batch_size": 64,
-            "num_workers": 4
-        },
-        "val_dataloader_params": {
-            "batch_size": 64,
-            "num_workers": 4
-        },
+        "dataloader_params": {"batch_size": 64, "num_workers": 4},
+        "val_dataloader_params": {"batch_size": 64, "num_workers": 4},
         "img_model_params": {
             "image_res": 256,
             "init_deit": False,
             "freeze_vision_encoder": False,
             "freeze_projection_heads": False,
             "vision_width": 768,
-            "embed_dim": 256
+            "embed_dim": 256,
         },
         "rna_model_params": {
             "embedding_dim": 128,
             "dropout_prob": 0.5,
             "num_heads": 8,
-            "projection_dim": 64
+            "projection_dim": 64,
         },
         "multimodal_model_params": {
             "co_attention_dim": 768,
@@ -58,7 +53,6 @@ def main():
             "num_heads": 8,
             "freeze_img_model": False,
             "freeze_rna_model": False,
-            
         },
         "logger_params": {
             "experiment_name": "paper_v2_rna_gradcam",
@@ -66,9 +60,9 @@ def main():
         },
         "device": "cuda",
         "manual_seed": 42,
-        "pretrained_path": "trained_models/multimodal_best.bin"
+        "pretrained_path": "trained_models/multimodal_best.bin",
     }
-    visualize(config,gradcam_on_rna=True)
+    visualize(config, gradcam_on_rna=True)
 
 
 if __name__ == "__main__":

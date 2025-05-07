@@ -1,5 +1,6 @@
 from gbheterogeneity.multimodal_processing.train import train
 
+
 def main():
     config = {
         "rna_dataset_params": {
@@ -25,17 +26,11 @@ def main():
                 "neutralColor": 215.0,
                 "tumorMinScore": 13107.2,
                 "neutralMinScore": 42598.4,
-                "maxPatchesPerImage": None
-            }
+                "maxPatchesPerImage": None,
+            },
         },
-        "dataloader_params": {
-            "batch_size": 64,
-            "num_workers": 4
-        },
-        "val_dataloader_params": {
-            "batch_size": 64,
-            "num_workers": 4
-        },
+        "dataloader_params": {"batch_size": 64, "num_workers": 4},
+        "val_dataloader_params": {"batch_size": 64, "num_workers": 4},
         "img_model_params": {
             "image_res": 256,
             "init_deit": False,
@@ -43,14 +38,14 @@ def main():
             "freeze_projection_heads": False,
             "vision_width": 768,
             "embed_dim": 256,
-            "img_pretrained_path": "trained_models/wsi_encoder.bin"
+            "img_pretrained_path": "trained_models/wsi_encoder.bin",
         },
         "rna_model_params": {
             "embedding_dim": 128,
             "dropout_prob": 0.5,
             "num_heads": 8,
             "projection_dim": 64,
-            "rna_pretrained_path": "trained_models/rna_encoder_ppi.bin"
+            "rna_pretrained_path": "trained_models/rna_encoder_ppi.bin",
         },
         "multimodal_model_params": {
             "co_attention_dim": 768,
@@ -59,29 +54,23 @@ def main():
             "projection_size": 128,
             "num_heads": 8,
             "freeze_img_model": False,
-            "freeze_rna_model": False
+            "freeze_rna_model": False,
         },
         "optimizer_name": "AdamWOptimizer",
-        "optimizer_params": {
-            "learning_rate": 0.0001,
-            "weight_decay": 0.02
-        },
+        "optimizer_params": {"learning_rate": 0.0001, "weight_decay": 0.02},
         "scheduler_name": "CosineScheduler",
         "scheduler_params": {
             "epochs": 10,
             "min_lr": 0.00001,
             "decay_rate": 1,
             "warmup_lr": 0.00001,
-            "warmup_epochs": 6
+            "warmup_epochs": 6,
         },
         "logger_params": {
             "experiment_name": "paper_v2_multimodal_chromosomes",
-            "experiment_dir": "output/mlruns"
+            "experiment_dir": "output/mlruns",
         },
-        "logging_params": {
-            "log_every_n_steps": 10,
-            "log_n_last_models": 4
-        },
+        "logging_params": {"log_every_n_steps": 10, "log_n_last_models": 4},
         "trainer_params": {
             "max_epochs": 10,
             "temp": 0.005,
@@ -90,10 +79,11 @@ def main():
             "coeff_reconstruction_loss": 1.0,
             "warmup_epochs": 6,
             "device": "cuda",
-            "manual_seed": 42
-        }
+            "manual_seed": 42,
+        },
     }
     train(config)
+
 
 if __name__ == "__main__":
     main()

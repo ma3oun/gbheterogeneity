@@ -2,14 +2,14 @@ import os
 import numpy as np
 import pandas as pd
 import networkx as nx
-from scipy import sparse
 from scipy.sparse import csr_matrix
 from typing import Dict
 from sknetwork import sknetwork as skn
 
 CLUSTERING_DIR = "gbdata/rna/gene_clustering/"
 
-def clusterizePPI(filteredPPI_File:str,verbose:bool=False)->Dict:
+
+def clusterizePPI(filteredPPI_File: str, verbose: bool = False) -> Dict:
     """
     Perform PPI graph clustering using different methods.
 
@@ -66,8 +66,8 @@ def clusterizePPI(filteredPPI_File:str,verbose:bool=False)->Dict:
     if verbose:
         print(f"Nodes in graph: {len(graphNodes)}")
 
-    louvain_labels_file = os.path.join(CLUSTERING_DIR,"louvain_labels.npz")
-    louvain_membership_file = os.path.join(CLUSTERING_DIR,"louvain_membership.npz")
+    louvain_labels_file = os.path.join(CLUSTERING_DIR, "louvain_labels.npz")
+    louvain_membership_file = os.path.join(CLUSTERING_DIR, "louvain_membership.npz")
 
     if os.path.exists(louvain_labels_file) and os.path.exists(louvain_membership_file):
         input(
@@ -90,7 +90,7 @@ def clusterizePPI(filteredPPI_File:str,verbose:bool=False)->Dict:
     for node_idx, node in enumerate(ppi_main.nodes()):
         index2label[node] = labels[node_idx]
 
-    return ppiDF,index2label
+    return ppiDF, index2label
 
 
 def assignLabels(ppi: pd.DataFrame, nodeLabels: dict) -> pd.DataFrame:
@@ -119,7 +119,7 @@ def assignLabels(ppi: pd.DataFrame, nodeLabels: dict) -> pd.DataFrame:
     - If a node index is not found in either 'x_index' or 'y_index', a warning message is printed.
     - Cluster labels greater than or equal to 6 are mapped to 6.
     """
-    
+
     geneLabelsDict = dict()
     x_data = set(zip(ppi["x_index"].to_list(), ppi["gene_name"].to_list()))
     x_dict = {idx: name for idx, name in x_data}
@@ -158,37 +158,59 @@ def assignLabels(ppi: pd.DataFrame, nodeLabels: dict) -> pd.DataFrame:
 
     return pd.DataFrame(dataFrameData)
 
-def filter_to_tcga(clusters_df,tcga_sample_file):
-    tcga_data = pd.read_csv(tcga_sample_file,skiprows=[0,2,3,4,5],sep="\t",usecols=["gene_id", "gene_name", "gene_type", "unstranded"])
+
+def filter_to_tcga(clusters_df, tcga_sample_file):
+    tcga_data = pd.read_csv(
+        tcga_sample_file,
+        skiprows=[0, 2, 3, 4, 5],
+        sep="\t",
+        usecols=["gene_id", "gene_name", "gene_type", "unstranded"],
+    )
     tcga_data = tcga_data[tcga_data["gene_type"] == "protein_coding"]
     tcga_data.drop(columns=["gene_type", "unstranded", "gene_type"], inplace=True)
     return pd.merge(clusters_df, tcga_data, on="gene_name")
 
-def group_genes_by_cluster(ppi_clusters,symbols_to_ensembl_mapping: dict):
+
+def group_genes_by_cluster(ppi_clusters, symbols_to_ensembl_mapping: dict):
     df = ppi_clusters.groupby("cluster")["gene_name"].apply(list)
-    df = df.apply(lambda x: [symbols_to_ensembl_mapping[gene] for gene in x if gene in symbols_to_ensembl_mapping.keys()])
+    df = df.apply(
+        lambda x: [
+            symbols_to_ensembl_mapping[gene]
+            for gene in x
+            if gene in symbols_to_ensembl_mapping.keys()
+        ]
+    )
     return df
+
 
 def load_mapping(mapping_file):
     mapping = {}
-    with open(mapping_file,"r") as f:
+    with open(mapping_file) as f:
         for line in f:
             gene_name, gene_id = line.strip().split(",")
             mapping[gene_name] = gene_id
     return mapping
 
+
 def main():
-    ppi_filtered_file = os.path.join(CLUSTERING_DIR,"ppi_filtered.csv")
-    ppiDF,mapping = clusterizePPI(ppi_filtered_file,verbose=True)
-    symbol_to_ensembl_mapping = load_mapping(os.path.join(CLUSTERING_DIR,"symbol_to_ensembl_mapping.csv"))
+    ppi_filtered_file = os.path.join(CLUSTERING_DIR, "ppi_filtered.csv")
+    ppiDF, mapping = clusterizePPI(ppi_filtered_file, verbose=True)
+    symbol_to_ensembl_mapping = load_mapping(
+        os.path.join(CLUSTERING_DIR, "symbol_to_ensembl_mapping.csv")
+    )
     ppi_clusters = assignLabels(ppiDF, mapping)
 
-    tcga_file = os.path.join(CLUSTERING_DIR,"tcga_sample.tsv")
-    ppi_clusters = filter_to_tcga(ppi_clusters,tcga_file)
+    tcga_file = os.path.join(CLUSTERING_DIR, "tcga_sample.tsv")
+    ppi_clusters = filter_to_tcga(ppi_clusters, tcga_file)
 
-    ppi_clusters.to_csv(os.path.join(CLUSTERING_DIR,"ppi_clusters.csv"))
-    grouped_genes = group_genes_by_cluster(ppi_clusters,symbol_to_ensembl_mapping)
-    grouped_genes.to_json(os.path.join(CLUSTERING_DIR,"ppi_cluster_to_ensembl_genes.json"), orient="index",indent=4)
+    ppi_clusters.to_csv(os.path.join(CLUSTERING_DIR, "ppi_clusters.csv"))
+    grouped_genes = group_genes_by_cluster(ppi_clusters, symbol_to_ensembl_mapping)
+    grouped_genes.to_json(
+        os.path.join(CLUSTERING_DIR, "ppi_cluster_to_ensembl_genes.json"),
+        orient="index",
+        indent=4,
+    )
+
 
 if __name__ == "__main__":
     main()

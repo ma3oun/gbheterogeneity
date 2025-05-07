@@ -1,5 +1,6 @@
 from gbheterogeneity.image_processing.train import train
 
+
 def main() -> None:
     config = {
         "dataset_params": {
@@ -19,20 +20,12 @@ def main() -> None:
                 "neutralColor": 215.0,
                 "tumorMinScore": 13107.2,
                 "neutralMinScore": 42598.4,
-                "maxPatchesPerImage": None
-            }
+                "maxPatchesPerImage": None,
+            },
         },
-        "val_dataset_params": {
-            "something": -1
-        },
-        "dataloader_params": {
-            "batch_size": 64,
-            "num_workers": 4
-        },
-        "val_dataloader_params": {
-            "batch_size": 64,
-            "num_workers": 4
-        },
+        "val_dataset_params": {"something": -1},
+        "dataloader_params": {"batch_size": 64, "num_workers": 4},
+        "val_dataloader_params": {"batch_size": 64, "num_workers": 4},
         "model_params": {
             "image_res": 256,
             "init_deit": True,
@@ -41,27 +34,21 @@ def main() -> None:
             "vision_width": 768,
             "embed_dim": 256,
             "optimizer_name": "AdamWOptimizer",
-            "optimizer_params": {
-                "learning_rate": 0.0001,
-                "weight_decay": 0.02
-            },
+            "optimizer_params": {"learning_rate": 0.0001, "weight_decay": 0.02},
             "scheduler_name": "CosineScheduler",
             "scheduler_params": {
                 "epochs": 25,
                 "min_lr": 0.00001,
                 "decay_rate": 1,
                 "warmup_lr": 0.00001,
-                "warmup_epochs": 6
-            }
+                "warmup_epochs": 6,
+            },
         },
         "logger_params": {
             "experiment_name": "paper_v2_wsi",
-            "experiment_dir": "output/mlruns"
+            "experiment_dir": "output/mlruns",
         },
-        "logging_params": {
-            "log_every_n_steps": 10,
-            "log_n_last_models": 5
-        },
+        "logging_params": {"log_every_n_steps": 10, "log_n_last_models": 5},
         "trainer": "trainer",
         "trainer_params": {
             "margin": 0.0001,
@@ -70,10 +57,11 @@ def main() -> None:
             "coeff_contrastive_loss": 1.0,
             "warmup_epochs": 6,  # same as scheduler
             "device": "cuda",
-            "manual_seed": 88
-        }
+            "manual_seed": 88,
+        },
     }
     train(config)
+
 
 if __name__ == "__main__":
     main()
