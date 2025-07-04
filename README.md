@@ -11,7 +11,7 @@ This repository contains the code and scripts to download and preprocess the dat
 
 ## Data
 
-Data can be provided by the authors upon request. The data can only be used for research purposes and cannot be redistributed. Please cite the paper if you use the data. Commercial use is strictly prohibited. The data is organized as follows:
+Data is available [here](https://doi.org/10.5281/zenodo.15807412). The data cannot be used for commercial purposes. Please cite the paper if you use the data. The data is organized as follows:
 
 - **WSI**: Whole Slide Images used for training the AI models.
 - **RNA-seq**: The RNA-seq encoder was pre-trained using data from The Cancer Genome Atlas (TCGA). The data needs to be downloaded to `gbdata/rna/tcga`. Oncopole RNA-seq raw data is in `gbdata/rna/oncopole_rna_raw.tsv`. Normalized RNA-seq Oncopole data needs to be downloaded to `gbdata/rna/oncopole`. All RNA-seq data has already been normalized using the `DESeq2` package.
